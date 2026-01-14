@@ -54,7 +54,17 @@ router.put('/:id', authMiddleware, checkRole('admin'), async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    await user.update(req.body);
+    // Whitelist allowed fields for update
+    const allowedFields = ['firstName', 'lastName', 'email', 'role', 'isActive'];
+    const updateData = {};
+    
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    }
+
+    await user.update(updateData);
     
     const updatedUser = await User.findByPk(user.id, {
       attributes: { exclude: ['password'] }
