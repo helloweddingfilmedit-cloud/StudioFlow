@@ -1,7 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const { User } = require('../models');
+
+const getJWTSecret = () => {
+  if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production environment');
+  }
+  return process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+};
 
 // Register a new user (admin only in production, but open for first user setup)
 router.post('/register', async (req, res) => {
@@ -11,7 +19,7 @@ router.post('/register', async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ 
       where: { 
-        [require('sequelize').Op.or]: [{ email }, { username }] 
+        [Op.or]: [{ email }, { username }] 
       } 
     });
 
@@ -36,7 +44,7 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+      getJWTSecret(),
       { expiresIn: '7d' }
     );
 
@@ -76,7 +84,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+      getJWTSecret(),
       { expiresIn: '7d' }
     );
 

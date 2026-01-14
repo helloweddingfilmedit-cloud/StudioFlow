@@ -1,6 +1,13 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
+const getJWTSecret = () => {
+  if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production environment');
+  }
+  return process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+};
+
 const authMiddleware = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -9,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: 'No authentication token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+    const decoded = jwt.verify(token, getJWTSecret());
     const user = await User.findByPk(decoded.userId);
 
     if (!user || !user.isActive) {
